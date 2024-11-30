@@ -19,6 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import CustomInput from "./CustomInput";
 import { authFormSchema } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { getLoggedInUser, signIn, signUp } from "@/lib/actions/user.actions";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -26,9 +28,12 @@ const formSchema = z.object({
 
 export const AuthForm = ({ type }: { type: string }) => {
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const formSchema = authFormSchema(type);
 
-  const form = useForm<z.infer<typeof authFormSchema>>({
-    resolver: zodResolver(authFormSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
       password: "",
@@ -36,11 +41,34 @@ export const AuthForm = ({ type }: { type: string }) => {
   });
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
+    setIsLoading(true);
+    try {
+      //Sign up with appwrite and create a plaid link token
+
+      if (type === "sign-up") {
+        const newUser = await signUp(values);
+        setUser(newUser);
+      }
+
+      if (type === "sign-in") {
+        const res = await signIn({
+          email: values.email,
+          password: values.password,
+        });
+        if (res) {
+          router.push("/");
+        }
+      }
+    } catch (error) {
+      console.log("Error ", error);
+    } finally {
+      setIsLoading(false);
+    }
     console.log(values);
-  }
+  };
   return (
     <section className="auth-form">
       <header className="flex flex-col gap-5 md:gap-8">
@@ -149,10 +177,10 @@ export const AuthForm = ({ type }: { type: string }) => {
               />
 
               <div className="flex flex-col gap-4">
-                {/* <Button type="submit" disabled={isLoading} className="form-btn">
+                <Button type="submit" disabled={isLoading} className="form-btn">
                   {isLoading ? (
                     <>
-                      <Loader2 size={20} className="animate-spin" /> &nbsp;
+                      {/* <Loader2 size={20} className="animate-spin" /> &nbsp; */}
                       Loading...
                     </>
                   ) : type === "sign-in" ? (
@@ -160,7 +188,7 @@ export const AuthForm = ({ type }: { type: string }) => {
                   ) : (
                     "Sign Up"
                   )}
-                </Button> */}
+                </Button>
               </div>
             </form>
           </Form>
