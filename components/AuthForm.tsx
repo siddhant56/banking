@@ -21,6 +21,7 @@ import CustomInput from "./CustomInput";
 import { authFormSchema } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { getLoggedInUser, signIn, signUp } from "@/lib/actions/user.actions";
+import PlaidLink from "./PlaidLink";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -49,7 +50,19 @@ export const AuthForm = ({ type }: { type: string }) => {
       //Sign up with appwrite and create a plaid link token
 
       if (type === "sign-up") {
-        const newUser = await signUp(values);
+        const userData = {
+          firstName: values.firstName!,
+          last_name: values.last_name!,
+          address1: values.address1!,
+          city: values.city!,
+          state: values.state!,
+          postalCode: values.postalCode!,
+          dateOfBirth: values.dateOfBirth!,
+          ssn: values.ssn!,
+          email: values.email,
+          password: values.password,
+        };
+        const newUser = await signUp(userData);
         setUser(newUser);
       }
 
@@ -97,7 +110,7 @@ export const AuthForm = ({ type }: { type: string }) => {
       </header>
       {user ? (
         <div className="flex flex-col gap-4">
-          {/* <PlaidLink user={user} variant="primary" /> */}
+          <PlaidLink user={user} variant="primary" />
         </div>
       ) : (
         <>
@@ -114,7 +127,7 @@ export const AuthForm = ({ type }: { type: string }) => {
                     />
                     <CustomInput
                       control={form.control}
-                      name="lastName"
+                      name="last_name"
                       label="Last Name"
                       placeholder="Enter your first name"
                     />
